@@ -23,6 +23,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  overflow-y: auto; /* Thêm dòng này để cho phép cuộn */
 }
 
 .container {
@@ -467,6 +468,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  overflow-y: auto; /* Thêm dòng này để cho phép cuộn */
 }
 
 /* Style cho camera container */
@@ -479,8 +481,8 @@ body {
   gap: 20px;
   /* Khoảng cách giữa các camera */
   padding: 20px 0;
-  height: calc(100vh - 200px);
-  /* Điều chỉnh chiều cao */
+  /* height: calc(100vh - 200px); */ /* Xóa hoặc comment dòng này */
+  /* margin-bottom: 20px; */ /* Bị ghi đè bởi inline style trong channels.html */
 }
 
 /* Style cho stream */
@@ -525,7 +527,6 @@ body {
   border-radius: 8px;
 }
 
-/* CSS cho channels-bar */
 .channels-bar {
   display: flex;
   align-items: center;

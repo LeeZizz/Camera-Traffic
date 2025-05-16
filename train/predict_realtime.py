@@ -4,10 +4,15 @@ from ultralytics import YOLO
 from ultralytics.utils.plotting import Annotator, colors
 import requests
 import time
-from flask import Flask, Response
+from flask import Flask, Response, request, jsonify, send_from_directory # Added request, jsonify, send_from_directory
+from flask_cors import CORS # Added CORS
+import os # Added os
+import base64 # Added base64
+from datetime import datetime # Added datetime
 
 # Khởi tạo Flask app
 app = Flask(__name__)
+CORS(app) # Enable CORS for all routes
 
 # Cấu hình mô hình YOLO và camera
 model = YOLO(r"E:\Năm 4 kì 2\CDHTTT\Dashboard\train\saban.pt")
@@ -20,6 +25,11 @@ vehicle_counts = {name: 0 for name in names.values()}
 last_sent_time = 0
 send_interval = 5
 line_thickness = 1
+
+# Cấu hình thư mục lưu screenshots
+SCREENSHOTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'screenshots')
+if not os.path.exists(SCREENSHOTS_DIR):
+    os.makedirs(SCREENSHOTS_DIR)
 
 def generate_frames():
     """Tạo luồng video từ camera và xử lý bằng YOLO"""
@@ -91,6 +101,47 @@ def run():
         print(f"Could not open camera {source}")
         return
     app.run(host='0.0.0.0', port=5000, threaded=True)
+
+@app.route('/save_screenshot', methods=['POST'])
+def save_screenshot():
+    try:
+        data = request.get_json()
+        image_data = data.get('image')
+        if not image_data:
+            return jsonify({"error": "No image data"}), 400
+
+        # Loại bỏ phần header của data URL (ví dụ: "data:image/png;base64,")
+        header, encoded = image_data.split(',', 1)
+        image_bytes = base64.b64decode(encoded)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        filename = f"screenshot_{timestamp}.png"
+        filepath = os.path.join(SCREENSHOTS_DIR, filename)
+
+        with open(filepath, 'wb') as f:
+            f.write(image_bytes)
+
+        return jsonify({"message": "Screenshot saved successfully", "filename": filename}), 200
+    except Exception as e:
+        print(f"Error saving screenshot: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/get_screenshots', methods=['GET'])
+def get_screenshots():
+    try:
+        # Lấy danh sách các tệp ảnh, sắp xếp theo thời gian tạo (mới nhất trước)
+        # Lọc chỉ lấy file .png, .jpg, .jpeg
+        image_files = [f for f in os.listdir(SCREENSHOTS_DIR) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+        # Sắp xếp theo tên file (bao gồm timestamp) để có thứ tự gần đúng theo thời gian
+        image_files.sort(reverse=True)
+        return jsonify({"screenshots": image_files}), 200
+    except Exception as e:
+        print(f"Error getting screenshots: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/screenshots/<filename>')
+def serve_screenshot(filename):
+    return send_from_directory(SCREENSHOTS_DIR, filename)
 
 if __name__ == "__main__":
     run()

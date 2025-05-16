@@ -12,3 +12,6 @@ CREATE TABLE vehicle (
     bus INT DEFAULT 0,                 -- Số lượng xe buýt
     truck INT DEFAULT 0                -- Số lượng xe tải
 );
+
+
+thêm cột timestamp nữa nhé
